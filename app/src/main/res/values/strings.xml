@@ -19,7 +19,7 @@
     <string name="details_action_ok_button">OK</string>
 
     <string name="notification_title">Download Status</string>
-    <string name="notification_description">%s has been downloaded</string>
+    <string name="notification_description">File has been downloaded</string>
     <string name="notification_button">See changes</string>
     <string name="notification_channel_id">channel_id</string>
     <string name="notification_channel_name">Download Status</string>

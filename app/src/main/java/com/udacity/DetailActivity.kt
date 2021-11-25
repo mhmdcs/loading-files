@@ -21,7 +21,9 @@ class DetailActivity : AppCompatActivity() {
         setDownloadStatus()
 
         finish_button.setOnClickListener {
-            finish()
+            val intent = Intent(this, MainActivity::class.java)
+            // start the main activity
+            startActivity(intent)
         }
     }
 
