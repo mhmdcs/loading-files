@@ -7,6 +7,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_detail.*
 import kotlinx.android.synthetic.main.content_detail.*
 
@@ -29,6 +30,7 @@ class DetailActivity : AppCompatActivity() {
 
     }
 
+
     private fun setDownloadStatus() {
         file = intent.getStringExtra("fileName").toString()
         downloadState = intent.getStringExtra("downloadState").toString()
@@ -36,8 +38,4 @@ class DetailActivity : AppCompatActivity() {
         download_state.text = downloadState
     }
 
-    override fun onStop() {
-        super.onStop()
-        finish()
-    }
 }
