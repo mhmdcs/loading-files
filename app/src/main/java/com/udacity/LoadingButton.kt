@@ -1,16 +1,23 @@
 package com.udacity
 
+import android.animation.AnimatorSet
 import android.animation.ValueAnimator
 import android.content.Context
+import android.content.res.TypedArray
 import android.graphics.*
+import android.text.TextPaint
 import android.util.AttributeSet
 import android.view.View
 import android.view.animation.LinearInterpolator
 import androidx.core.animation.addListener
+import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.content.withStyledAttributes
 import androidx.interpolator.view.animation.LinearOutSlowInInterpolator
+import java.util.concurrent.TimeUnit
+import kotlin.math.min
 import kotlin.properties.Delegates
+
 
 class LoadingButton @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0
@@ -18,112 +25,214 @@ class LoadingButton @JvmOverloads constructor(
     private var widthSize = 0
     private var heightSize = 0
 
-    private val backgroundColor: Int =
-        ResourcesCompat.getColor(resources, R.color.colorPrimary, null)
-    private val drawColor = ResourcesCompat.getColor(resources, R.color.colorAccent, null)
-    private val textColor = ResourcesCompat.getColor(resources, R.color.white, null)
-    private val rectangleProgressColor =
-        ResourcesCompat.getColor(resources, R.color.colorPrimaryDark, null)
-    private var rectF: RectF
-    var currentSweepAngle = 0f
-    var rectangleProgress = RectF()
+    private var loadingText: CharSequence = ""
+    private var loadingTextColor = 0
+    private var loadingBackgroundColor = 0
+    private var text = ""
+    private var defaultText: CharSequence = ""
+    private var defaultBackgroundColor = 0
 
-    private val LOADING = context.getString(R.string.button_loading)
-    private val DOWNLOADING = context.getString(R.string.button_name)
+    private var loadingBackgroundEndPositionValue = 0f
 
-    private var buttonState: ButtonState by Delegates.observable<ButtonState>(ButtonState.Completed) { p, old, new ->
+    private var progressCircleSize = 0f
+    private val progressCircleRect = RectF()
+    private var progressCircleBackgroundColor = 0
+    private var progressCircleEndAngleValue = 0f
 
+    private lateinit var textBounds: Rect
+    private lateinit var backgroundAnimator: ValueAnimator
+
+    companion object {
+        private const val TEXT_OFFSET = 20f
+        private const val ANIMATION_TIME = 2L
+        private const val TEXT_SIZE = 55f
     }
 
-    private var fontSize = 0f
-    private var circleRadius = 0f
-    private lateinit var extraCanvas: Canvas
-    private lateinit var extraBitmap: Bitmap
-
-    private val textPaint = Paint().apply {
-        color = textColor
-        textSize = fontSize
-        textAlign = Paint.Align.CENTER
-    }
-
-    private val rectanglePaint = Paint().apply {
-        color = rectangleProgressColor
-    }
-
-    private val circlePaint = Paint().apply {
-        color = drawColor
-        isAntiAlias = true
-        isDither = true
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
-        strokeJoin = Paint.Join.ROUND
-        strokeCap = Paint.Cap.ROUND
-        textSize = fontSize
     }
-    private val clipRectStart = resources.getDimension(R.dimen.clipRectStart)
-    private val clipRectBottom = resources.getDimension(R.dimen.clipRectBottom)
-    private val clipRectTop = resources.getDimension(R.dimen.clipRectTop)
-    private val clipRectEnd = resources.getDimension(R.dimen.clipRectEnd)
+
+    private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        textAlign = Paint.Align.CENTER
+        textSize = TEXT_SIZE
+        typeface = Typeface.DEFAULT
+    }
+
+    private val animatorSet: AnimatorSet = AnimatorSet().apply {
+        duration = TimeUnit.SECONDS.toMillis(ANIMATION_TIME)
+    }
+
+    private val progressAnimation = ValueAnimator.ofFloat(0f, 360f).apply {
+        repeatMode = ValueAnimator.RESTART
+        repeatCount = ValueAnimator.INFINITE
+        interpolator = LinearInterpolator()
+        addUpdateListener {
+            progressCircleEndAngleValue = it.animatedValue as Float
+            invalidate()
+        }
+    }
+
+
+    private var buttonState: ButtonState by Delegates.observable<ButtonState>(ButtonState.Completed) { _, _, new ->
+        when (new) {
+            ButtonState.Loading -> {
+                text = loadingText.toString()
+                if (!::textBounds.isInitialized) {
+                    getTextBounds()
+                    setProgressCircle()
+                }
+                animatorSet.start()
+            }
+            else -> {
+                text = defaultText.toString()
+                new.takeIf { it == ButtonState.Completed }?.run { animatorSet.cancel() }
+            }
+        }
+    }
+
+    private fun getTextBounds() {
+        textBounds = Rect()
+        textPaint.getTextBounds(text, 0, text.length, textBounds)
+    }
+
+    private fun setProgressCircle() {
+        val horizontalCenter =
+            (textBounds.right + textBounds.width() + 24f)
+        val verticalCenter = (heightSize / 2f)
+
+        progressCircleRect.set(
+            horizontalCenter - progressCircleSize,
+            verticalCenter - progressCircleSize,
+            horizontalCenter + progressCircleSize,
+            verticalCenter + progressCircleSize
+        )
+    }
+
 
     init {
-        isClickable = true
-        val defFontSize = context.resources.getDimension(R.dimen.default_text_size);
-
         context.withStyledAttributes(attrs, R.styleable.LoadingButton) {
-            fontSize = getDimension(R.styleable.LoadingButton_textSize, defFontSize)
-            circleRadius = getDimension(R.styleable.LoadingButton_circleRadius, defFontSize)
+            setStyleValues()
         }
-        rectF = RectF(0f, 0f, circleRadius * 2f, circleRadius * 2f)
-        textPaint.textSize = fontSize
+        text = defaultText.toString()
+        progressCircleBackgroundColor = ContextCompat.getColor(context, R.color.colorAccent)
     }
 
-    override fun onDraw(canvas: Canvas) {
+    private fun TypedArray.setStyleValues() {
+        defaultBackgroundColor =
+            getColor(R.styleable.LoadingButton_defaultBackgroundColor, 0)
+        loadingBackgroundColor =
+            getColor(R.styleable.LoadingButton_loadingBackgroundColor, 0)
+        defaultText =
+            getText(R.styleable.LoadingButton_defaultText)
+        loadingTextColor =
+            getColor(R.styleable.LoadingButton_loadingTextColor, 0)
+        loadingText =
+            getText(R.styleable.LoadingButton_loadingText)
+    }
+
+
+    override fun onDraw(canvas: Canvas?) {
         super.onDraw(canvas)
-        canvas.drawColor(backgroundColor)
-        var currText = ""
-        var showRect = false
-        var showCircle = false
+        canvas?.let {
+            drawBackgroundColor(it)
+            drawText(it)
+        }
+        if (buttonState == ButtonState.Loading) {
+            drawProgressCircle(canvas)
+        }
+    }
+
+    private fun drawBackgroundColor(canvas: Canvas?) {
         when (buttonState) {
-            ButtonState.Clicked -> {
-                showRect = true
-                showCircle = true
-            }
             ButtonState.Loading -> {
-                currText = LOADING
-                showRect = true
-                showCircle = true
+                drawLoadingBackgroundColor(canvas)
+                drawDefaultBackgroundColor(canvas)
             }
-            ButtonState.Completed -> {
-                showRect = false
-                showCircle = false
-                currText = DOWNLOADING
+            else -> canvas?.drawColor(defaultBackgroundColor)
+        }
+    }
+
+    private fun drawLoadingBackgroundColor(canvas: Canvas?) {
+        paint.apply {
+            color = loadingBackgroundColor
+        }
+        canvas?.drawRect(
+            0f,
+            0f,
+            loadingBackgroundEndPositionValue,
+            heightSize.toFloat(),
+            paint
+        )
+    }
+
+    private fun drawDefaultBackgroundColor(canvas: Canvas?) {
+        paint.apply {
+            color = defaultBackgroundColor
+        }
+        canvas?.drawRect(
+            loadingBackgroundEndPositionValue,
+            0f,
+            widthSize.toFloat(),
+            heightSize.toFloat(),
+            paint
+        )
+    }
+
+    private fun drawText(canvas: Canvas?) {
+        textPaint.color = loadingTextColor
+        canvas?.drawText(
+            text,
+            (widthSize / 2f),
+            (heightSize / 2f) + TEXT_OFFSET,
+            textPaint
+        )
+    }
+
+    private fun drawProgressCircle(canvas: Canvas?) {
+        paint.color = progressCircleBackgroundColor
+        canvas?.drawArc(
+            progressCircleRect,
+            0f,
+            progressCircleEndAngleValue,
+            true,
+            paint
+        )
+    }
+
+    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
+        super.onSizeChanged(w, h, oldw, oldh)
+        progressCircleSize = (min(w, h) / 2f) * 0.5f
+        setBackgroundAnimator()
+    }
+
+    override fun performClick(): Boolean {
+        super.performClick()
+        if (buttonState == ButtonState.Completed) {
+            buttonState = ButtonState.Clicked
+            invalidate()
+        }
+        return true
+    }
+
+    private fun setBackgroundAnimator() {
+        backgroundAnimator =  ValueAnimator.ofFloat(0f, widthSize.toFloat()).apply {
+            repeatMode = ValueAnimator.RESTART
+            repeatCount = ValueAnimator.INFINITE
+            interpolator = LinearInterpolator()
+            addUpdateListener {
+                loadingBackgroundEndPositionValue = it.animatedValue as Float
+                invalidate()
             }
         }
+        animatorSet.playTogether(progressAnimation, backgroundAnimator)
+    }
 
-        val yPos =
-            (height / 2 - (textPaint.descent() + textPaint.ascent()) / 2).toInt()
-
-
-        val bounds = getTextBounds(currText, textPaint)
-        if (showRect) {
-            canvas.drawRect(rectangleProgress, rectanglePaint)
+    fun changeButtonState(state: ButtonState) {
+        if (state != buttonState) {
+            buttonState = state
+            invalidate()
         }
-
-        canvas.save()
-        canvas.translate(
-            widthSize / 2f + (bounds.right.toFloat() / 2) + circleRadius,
-            heightSize / 2f - circleRadius
-        )
-        canvas.clipRect(
-            clipRectEnd, clipRectTop,
-            clipRectStart, clipRectBottom
-        )
-        if (showCircle) {
-            canvas.drawArc(rectF, 0f, currentSweepAngle, true, circlePaint)
-        }
-        canvas.restore()
-        canvas.drawText(currText, widthSize / 2f, yPos.toFloat(), textPaint)
-
-
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -137,74 +246,6 @@ class LoadingButton @JvmOverloads constructor(
         widthSize = w
         heightSize = h
         setMeasuredDimension(w, h)
-    }
-
-    override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
-        super.onSizeChanged(w, h, oldw, oldh)
-        if (::extraBitmap.isInitialized) extraBitmap.recycle()
-        extraBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        extraCanvas = Canvas(extraBitmap)
-        extraCanvas.drawColor(backgroundColor)
-        rectangleProgress = RectF(0f, 0f, 1f, heightSize.toFloat())
-    }
-
-    private fun startAnimation() {
-        val cicleMultiplier = 3.6f
-        val rectMultiplier = widthSize.toFloat() / 100
-        buttonState = ButtonState.Clicked
-
-        ValueAnimator.ofFloat(0f, 100f).apply {
-            duration = 2000
-            interpolator = LinearOutSlowInInterpolator()
-            addUpdateListener { valueAnimator ->
-                rectangleProgress.right = valueAnimator.animatedValue as Float * rectMultiplier
-                currentSweepAngle = valueAnimator.animatedValue as Float * cicleMultiplier
-                buttonState = ButtonState.Loading
-                invalidate()
-            }
-            addListener({
-                buttonState = ButtonState.Completed
-                invalidate()
-            })
-        }?.start()
-
-    }
-
-    fun startCircleAnimation() {
-        ValueAnimator.ofFloat(0f, 360f).apply {
-            duration = 650
-            interpolator = LinearInterpolator()
-            addUpdateListener { valueAnimator ->
-                currentSweepAngle = valueAnimator.animatedValue as Float
-                invalidate()
-            }
-        }?.start()
-    }
-
-    fun startRectangleAnimation() {
-        ValueAnimator.ofFloat(0f, widthSize.toFloat()).apply {
-            duration = 650
-            interpolator = LinearInterpolator()
-            addUpdateListener { valueAnimator ->
-                rectangleProgress.right = valueAnimator.animatedValue as Float
-                invalidate()
-            }
-        }?.start()
-    }
-
-    override fun performClick(): Boolean {
-        buttonState = ButtonState.Clicked
-        startAnimation()
-
-        invalidate()
-        super.performClick()
-        return true
-    }
-
-    private fun getTextBounds(text: String, paint: Paint): Rect {
-        val bounds = Rect()
-        paint.getTextBounds(text, 0, text.length, bounds)
-        return bounds
     }
 
 }
