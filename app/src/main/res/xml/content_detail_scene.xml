@@ -69,18 +69,7 @@
             android:textSize="@dimen/default_text_size"
             tools:text="Fail"/>
 
-        <Constraint
-            android:alpha="0.0"
-            android:id="@+id/finish_button"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_marginTop="@dimen/margin"
-            app:layout_constraintTop_toBottomOf="@id/download_state_text"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:background="?attr/colorPrimary"
-            android:text="OK"
-            />
+
 
     </ConstraintSet>
 
@@ -140,17 +129,5 @@
             android:textSize="@dimen/default_text_size"
             tools:text="Fail"/>
 
-        <Constraint
-            android:alpha="1.0"
-            android:id="@+id/finish_button"
-            android:layout_width="0dp"
-            android:layout_height="60dp"
-            android:layout_marginTop="@dimen/margin"
-            app:layout_constraintTop_toBottomOf="@id/download_state_text"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            android:background="?attr/colorPrimary"
-            android:text="OK"
-            />
     </ConstraintSet>
 </MotionScene>

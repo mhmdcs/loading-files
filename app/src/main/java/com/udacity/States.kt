@@ -14,7 +14,7 @@ sealed class DownloadState {
 }
 
 fun DownloadState.asString() = when(this) {
-    DownloadState.Successful -> "Success"
-    DownloadState.Failed -> "Fail"
-    else -> "Unknown"
+    DownloadState.Successful -> "Successful"
+    DownloadState.Failed -> "Failure"
+    else -> "Error"
 }

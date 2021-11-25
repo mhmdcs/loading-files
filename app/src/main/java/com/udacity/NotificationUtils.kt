@@ -10,8 +10,8 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 
-private const val NOTIFICATION_ID = 1
 private const val REQUEST_CODE = 1
+private const val NOTIFICATION_ID = 1
 
 fun NotificationManager.sendNotification(
     downloadState: DownloadState,
@@ -44,7 +44,7 @@ fun NotificationManager.sendNotification(
         .setSmallIcon(R.drawable.ic_assistant_black_24dp)
         .setContentTitle(context.getString(R.string.notification_title))
         .setContentText(context.getString(R.string.notification_description))
-        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+        .setPriority(NotificationCompat.PRIORITY_HIGH)
         .setContentIntent(pendingIntent)
         .setAutoCancel(true)
         .addAction(checkStatusAction)
@@ -54,7 +54,7 @@ fun NotificationManager.sendNotification(
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
-fun NotificationManager.createDownloadNotificationChannel(context: Context) {
+fun NotificationManager.createChannel(context: Context) {
     Build.VERSION.SDK_INT.takeIf { it >= Build.VERSION_CODES.O }?.run {
         val notificationChannel = NotificationChannel(
             context.getString(R.string.notification_channel_id),

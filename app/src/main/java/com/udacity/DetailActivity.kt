@@ -11,8 +11,9 @@ import kotlinx.android.synthetic.main.activity_detail.*
 import kotlinx.android.synthetic.main.content_detail.*
 
 class DetailActivity : AppCompatActivity() {
-    private lateinit var fileName:String
-    private lateinit var downloadState:String
+    private lateinit var downloadState: String
+    private lateinit var file: String
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -20,18 +21,23 @@ class DetailActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         setDownloadStatus()
 
-        finish_button.setOnClickListener {
+        ok_button.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
-            // start the main activity
-            startActivity(intent)
+       //      start the main activity
+                  startActivity(intent)
         }
+
     }
 
     private fun setDownloadStatus() {
-        fileName = intent.getStringExtra("fileName").toString()
+        file = intent.getStringExtra("fileName").toString()
         downloadState = intent.getStringExtra("downloadState").toString()
-        file_name_text.text = fileName
-        download_state_text.text = downloadState
+        file_name.text = file
+        download_state.text = downloadState
     }
 
+    override fun onStop() {
+        super.onStop()
+        finish()
+    }
 }

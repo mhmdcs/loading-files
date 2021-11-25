@@ -12,57 +12,58 @@
     tools:showIn="@layout/activity_detail">
 
     <TextView
-        android:id="@+id/file_name_label_text"
+        android:id="@+id/file_name_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/file_name_text"
+        app:layout_constraintEnd_toStartOf="@id/file_name"
         android:textSize="@dimen/default_text_size"
         android:text="File Name:"/>
 
     <TextView
-        android:id="@+id/file_name_text"
+        android:id="@+id/file_name"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/file_name_label_text"
+        app:layout_constraintStart_toEndOf="@id/file_name_label"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="@dimen/default_text_size"
         tools:text="LoadApp - Current repository by Udacity"/>
 
     <TextView
-        android:id="@+id/download_state_label_text"
+        android:id="@+id/download_state_label"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/file_name_text"
+        app:layout_constraintTop_toBottomOf="@id/file_name"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toStartOf="@id/download_state_text"
+        app:layout_constraintEnd_toStartOf="@id/download_state"
         android:textSize="@dimen/default_text_size"
         android:text="Status:"/>
 
     <TextView
-        android:id="@+id/download_state_text"
+        android:id="@+id/download_state"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        app:layout_constraintTop_toBottomOf="@id/file_name_text"
+        app:layout_constraintTop_toBottomOf="@id/file_name"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toEndOf="@id/download_state_label_text"
+        app:layout_constraintStart_toEndOf="@id/download_state_label"
         android:textColor="@color/colorPrimaryDark"
         android:textSize="@dimen/default_text_size"
         tools:text="Fail"/>
 
     <Button
-        android:id="@+id/finish_button"
+        android:id="@+id/ok_button"
         android:layout_width="0dp"
         android:layout_height="60dp"
         android:layout_marginTop="@dimen/margin"
-        app:layout_constraintTop_toBottomOf="@id/download_state_text"
+        app:layout_constraintTop_toBottomOf="@id/download_state"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         android:background="?attr/colorPrimary"
         android:text="OK"
         />
+
 
 </androidx.constraintlayout.motion.widget.MotionLayout>

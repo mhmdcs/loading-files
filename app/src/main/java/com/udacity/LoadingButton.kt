@@ -26,26 +26,27 @@ class LoadingButton @JvmOverloads constructor(
     private var heightSize = 0
 
     private var loadingText: CharSequence = ""
+    private var defaultText: CharSequence = ""
+    private var text = ""
+    private var defaultBackgroundColor = 0
     private var loadingTextColor = 0
     private var loadingBackgroundColor = 0
-    private var text = ""
-    private var defaultText: CharSequence = ""
-    private var defaultBackgroundColor = 0
+
+    private var progressCircleSize = 0f
+    private var progressCircleBackgroundColor = 0
+    private val progressCircleRect = RectF()
+    private var progressCircleEndAngleValue = 0f
 
     private var loadingBackgroundEndPositionValue = 0f
 
-    private var progressCircleSize = 0f
-    private val progressCircleRect = RectF()
-    private var progressCircleBackgroundColor = 0
-    private var progressCircleEndAngleValue = 0f
-
-    private lateinit var textBounds: Rect
     private lateinit var backgroundAnimator: ValueAnimator
 
+    private lateinit var textBounds: Rect
+
     companion object {
-        private const val TEXT_OFFSET = 20f
-        private const val ANIMATION_TIME = 2L
         private const val TEXT_SIZE = 55f
+        private const val ANIMATION_TIME = 2L
+        private const val TEXT_OFFSET = 20f
     }
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
@@ -53,10 +54,10 @@ class LoadingButton @JvmOverloads constructor(
     }
 
     private val textPaint = TextPaint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.FILL
         textAlign = Paint.Align.CENTER
-        textSize = TEXT_SIZE
+        style = Paint.Style.FILL
         typeface = Typeface.DEFAULT
+        textSize = TEXT_SIZE
     }
 
     private val animatorSet: AnimatorSet = AnimatorSet().apply {
@@ -64,8 +65,8 @@ class LoadingButton @JvmOverloads constructor(
     }
 
     private val progressAnimation = ValueAnimator.ofFloat(0f, 360f).apply {
-        repeatMode = ValueAnimator.RESTART
         repeatCount = ValueAnimator.INFINITE
+        repeatMode = ValueAnimator.RESTART
         interpolator = LinearInterpolator()
         addUpdateListener {
             progressCircleEndAngleValue = it.animatedValue as Float
@@ -73,6 +74,33 @@ class LoadingButton @JvmOverloads constructor(
         }
     }
 
+    init {
+        context.withStyledAttributes(attrs, R.styleable.LoadingButton) {
+            setStyleValues()
+        }
+        text = defaultText.toString()
+        progressCircleBackgroundColor = ContextCompat.getColor(context, R.color.colorAccent)
+    }
+
+
+    private fun getTextBounds() {
+        textBounds = Rect()
+        textPaint.getTextBounds(text, 0, text.length, textBounds)
+    }
+
+
+    private fun setProgressCircle() {
+        val horizontalCenter =
+            (textBounds.right + textBounds.width() + 24f)
+        val verticalCenter = (heightSize / 2f)
+
+        progressCircleRect.set(
+            horizontalCenter - progressCircleSize,
+            verticalCenter - progressCircleSize,
+            horizontalCenter + progressCircleSize,
+            verticalCenter + progressCircleSize
+        )
+    }
 
     private var buttonState: ButtonState by Delegates.observable<ButtonState>(ButtonState.Completed) { _, _, new ->
         when (new) {
@@ -91,69 +119,42 @@ class LoadingButton @JvmOverloads constructor(
         }
     }
 
-    private fun getTextBounds() {
-        textBounds = Rect()
-        textPaint.getTextBounds(text, 0, text.length, textBounds)
-    }
-
-    private fun setProgressCircle() {
-        val horizontalCenter =
-            (textBounds.right + textBounds.width() + 24f)
-        val verticalCenter = (heightSize / 2f)
-
-        progressCircleRect.set(
-            horizontalCenter - progressCircleSize,
-            verticalCenter - progressCircleSize,
-            horizontalCenter + progressCircleSize,
-            verticalCenter + progressCircleSize
-        )
-    }
-
-
-    init {
-        context.withStyledAttributes(attrs, R.styleable.LoadingButton) {
-            setStyleValues()
-        }
-        text = defaultText.toString()
-        progressCircleBackgroundColor = ContextCompat.getColor(context, R.color.colorAccent)
-    }
 
     private fun TypedArray.setStyleValues() {
         defaultBackgroundColor =
             getColor(R.styleable.LoadingButton_defaultBackgroundColor, 0)
-        loadingBackgroundColor =
-            getColor(R.styleable.LoadingButton_loadingBackgroundColor, 0)
-        defaultText =
-            getText(R.styleable.LoadingButton_defaultText)
         loadingTextColor =
             getColor(R.styleable.LoadingButton_loadingTextColor, 0)
         loadingText =
             getText(R.styleable.LoadingButton_loadingText)
+        loadingBackgroundColor =
+            getColor(R.styleable.LoadingButton_loadingBackgroundColor, 0)
+        defaultText =
+            getText(R.styleable.LoadingButton_defaultText)
     }
 
-
-    override fun onDraw(canvas: Canvas?) {
-        super.onDraw(canvas)
-        canvas?.let {
-            drawBackgroundColor(it)
-            drawText(it)
-        }
-        if (buttonState == ButtonState.Loading) {
-            drawProgressCircle(canvas)
-        }
-    }
-
-    private fun drawBackgroundColor(canvas: Canvas?) {
+    private fun drawBgColor(canvas: Canvas?) {
         when (buttonState) {
             ButtonState.Loading -> {
-                drawLoadingBackgroundColor(canvas)
-                drawDefaultBackgroundColor(canvas)
+                drawLoadingBgColor(canvas)
+                drawDefaultBgColor(canvas)
             }
             else -> canvas?.drawColor(defaultBackgroundColor)
         }
     }
 
-    private fun drawLoadingBackgroundColor(canvas: Canvas?) {
+    override fun onDraw(canvas: Canvas?) {
+        super.onDraw(canvas)
+        canvas?.let {
+            drawBgColor(it)
+            drawText(it)
+        }
+        if (buttonState == ButtonState.Loading) {
+            drawProgCircle(canvas)
+        }
+    }
+
+    private fun drawLoadingBgColor(canvas: Canvas?) {
         paint.apply {
             color = loadingBackgroundColor
         }
@@ -166,7 +167,7 @@ class LoadingButton @JvmOverloads constructor(
         )
     }
 
-    private fun drawDefaultBackgroundColor(canvas: Canvas?) {
+    private fun drawDefaultBgColor(canvas: Canvas?) {
         paint.apply {
             color = defaultBackgroundColor
         }
@@ -189,7 +190,7 @@ class LoadingButton @JvmOverloads constructor(
         )
     }
 
-    private fun drawProgressCircle(canvas: Canvas?) {
+    private fun drawProgCircle(canvas: Canvas?) {
         paint.color = progressCircleBackgroundColor
         canvas?.drawArc(
             progressCircleRect,
@@ -215,10 +216,17 @@ class LoadingButton @JvmOverloads constructor(
         return true
     }
 
+    fun changeButtonState(state: ButtonState) {
+        if (state != buttonState) {
+            buttonState = state
+            invalidate()
+        }
+    }
+
     private fun setBackgroundAnimator() {
         backgroundAnimator =  ValueAnimator.ofFloat(0f, widthSize.toFloat()).apply {
-            repeatMode = ValueAnimator.RESTART
             repeatCount = ValueAnimator.INFINITE
+            repeatMode = ValueAnimator.RESTART
             interpolator = LinearInterpolator()
             addUpdateListener {
                 loadingBackgroundEndPositionValue = it.animatedValue as Float
@@ -228,12 +236,6 @@ class LoadingButton @JvmOverloads constructor(
         animatorSet.playTogether(progressAnimation, backgroundAnimator)
     }
 
-    fun changeButtonState(state: ButtonState) {
-        if (state != buttonState) {
-            buttonState = state
-            invalidate()
-        }
-    }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val minw: Int = paddingLeft + paddingRight + suggestedMinimumWidth

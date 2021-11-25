@@ -32,26 +32,28 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var downloadID: Long = 0
-    private var downloadObserver: ContentObserver? = null
     private var fileName = ""
+    private var downloadObserver: ContentObserver? = null
+
     private lateinit var downloadState: DownloadState
+
     private val receiver = object : BroadcastReceiver() {
         @RequiresApi(Build.VERSION_CODES.O)
         override fun onReceive(context: Context?, intent: Intent?) {
             unregisterDownloadObserver()
             downloadState.takeIf { it != DownloadState.Unknown }?.run {
-                sendDownloadNotification()
+                sendLoadNotification()
             }
         }
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    private fun sendDownloadNotification() {
+    private fun sendLoadNotification() {
         val notificationManager = ContextCompat.getSystemService(
             applicationContext,
             NotificationManager::class.java
         ) as NotificationManager
-        notificationManager.createDownloadNotificationChannel(applicationContext)
+        notificationManager.createChannel(applicationContext)
         notificationManager.sendNotification(downloadState, fileName, applicationContext)
     }
 
@@ -65,7 +67,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
         setSupportActionBar(toolbar)
+
         registerReceiver(receiver, IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE))
+
+        //set onClickListener on custom  view button
         custom_button.setOnClickListener {
             loadingButtonListener()
         }
@@ -91,16 +96,16 @@ class MainActivity : AppCompatActivity() {
             DownloadManager.Request(Uri.parse(URL))
                 .setTitle(getString(R.string.app_name))
                 .setDescription(getString(R.string.app_description))
-                .setRequiresCharging(false)
                 .setAllowedOverMetered(true)
+                .setRequiresCharging(false)
                 .setAllowedOverRoaming(true)
         val downloadManager = getSystemService(DOWNLOAD_SERVICE) as DownloadManager
         downloadID =
             downloadManager.enqueue(request)// enqueue puts the download request in the queue.
-        registerDownloadObserver(downloadManager)
+        registerObserver(downloadManager)
     }
 
-    private fun registerDownloadObserver(downloadManager: DownloadManager) {
+    private fun registerObserver(downloadManager: DownloadManager) {
         downloadObserver = object : ContentObserver(Handler(Looper.getMainLooper())) {
             override fun onChange(selfChange: Boolean) {
                 downloadStatus(downloadManager)
@@ -119,13 +124,17 @@ class MainActivity : AppCompatActivity() {
             with(it) {
                 if (this != null && moveToFirst()) {
                     when (getInt(getColumnIndex(DownloadManager.COLUMN_STATUS))) {
+                        //when running
                         DownloadManager.STATUS_RUNNING -> {
                             custom_button.changeButtonState(ButtonState.Loading)
                         }
+
+                        //when failed
                         DownloadManager.STATUS_FAILED -> {
                             custom_button.changeButtonState(ButtonState.Completed)
                             changeDownloadState(DownloadState.Failed)
                         }
+                        //when successful
                         DownloadManager.STATUS_SUCCESSFUL -> {
                             custom_button.changeButtonState(ButtonState.Completed)
                             changeDownloadState(DownloadState.Successful)
@@ -138,8 +147,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun changeDownloadState(state: DownloadState) {
+
         if (!::downloadState.isInitialized || state != downloadState) {
             downloadState = state
         }
     }
+
 }
