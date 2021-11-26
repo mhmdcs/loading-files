@@ -9,7 +9,7 @@
     <Transition
         app:constraintSetStart="@+id/start"
         app:constraintSetEnd="@+id/end"
-        app:duration="1000"
+        app:duration="4000"
         app:autoTransition="animateToEnd"
         />
 
@@ -92,7 +92,7 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/file_name"
             android:textSize="@dimen/default_text_size"
-            android:text="File:"/>
+            android:text="File Name:"/>
 
         <Constraint
             android:alpha="1.0"
@@ -128,6 +128,19 @@
             android:textColor="@color/colorPrimaryDark"
             android:textSize="@dimen/default_text_size"
             tools:text="Fail"/>
+
+        <Constraint
+            android:alpha="1.0"
+            android:id="@+id/ok_button"
+            android:layout_width="0dp"
+            android:layout_height="60dp"
+            android:layout_marginTop="@dimen/margin"
+            app:layout_constraintTop_toBottomOf="@id/download_state"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:background="?attr/colorPrimary"
+            android:text="OK"
+            />
 
     </ConstraintSet>
 </MotionScene>
